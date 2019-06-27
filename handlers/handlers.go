@@ -20,10 +20,10 @@ func Handlers(requestChan chan<- models.Request, logger zerolog.Logger) http.Han
 
 func request(requestChan chan<- models.Request, logger zerolog.Logger) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// TODO: change to POST
 		if logger, ok := verifyMethod("/request", r.Method, "GET", logger, w); ok {
 
-			// TODO: validate fields before sending to requestChan
 			requestChan <- models.Request{
 				ResourceType:  "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment",
 				Zone:          "default-zone",
@@ -48,6 +48,7 @@ func listen(logger zerolog.Logger) func(http.ResponseWriter, *http.Request) {
 		if logger, ok := verifyMethod("/listen", r.Method, "GET", logger, w); ok {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
+
 			// TODO: return internal model resources as JSON
 			jsonResp := "{\"listening\": true}"
 			if _, err := w.Write([]byte(jsonResp)); err != nil {
@@ -75,11 +76,12 @@ func ping(logger zerolog.Logger) func(http.ResponseWriter, *http.Request) {
 }
 
 func verifyMethod(route, method, expectedMethod string, logger zerolog.Logger, w http.ResponseWriter) (zerolog.Logger, bool) {
-	logger = logger.With().Str("request-type", fmt.Sprintf("%s:'%s'", method, route)).Logger()
+	logger = logger.With().Str("request-type", fmt.Sprintf("%s %s", method, route)).Logger()
 	if method != expectedMethod {
 		logger.Warn().Msg("405 Method Not Allowed")
 		Report(ProblemDetail{StatusCode: http.StatusMethodNotAllowed, Detail: method}, w)
 		return logger, false
 	}
+	logger.Info().Msg("Received request")
 	return logger, true
 }

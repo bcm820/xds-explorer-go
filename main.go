@@ -53,11 +53,11 @@ func main() {
 
 	// shutdown
 	s := <-sigChan
+	cancelFunc()
 	if err = server.Close(); err != nil {
 		logger.Error().AnErr("server.Close()", err).Msg("REST server shutdown error")
 	} else {
 		logger.Info().Msg("Shutdown REST server")
 	}
 	logger.Info().Str("signal", s.String()).Msg("Shutdown XDS Explorer")
-	cancelFunc()
 }
