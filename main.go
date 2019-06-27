@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bcmendoza/xds-explorer/handlers"
-	"github.com/bcmendoza/xds-explorer/models"
+	"github.com/bcmendoza/xds-explorer/model"
 	"github.com/bcmendoza/xds-explorer/stream"
 
 	"github.com/rs/zerolog"
@@ -32,17 +32,20 @@ func main() {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
 	// request channel
-	requestChan := make(chan models.Request, 1)
+	requestChan := make(chan model.Request, 1)
+
+	// model
+	resources := model.New()
 
 	// GRPC stream
 	streamLogger := logger.With().Str("package", "stream").Logger()
-	go stream.Listen(ctx, requestChan, streamLogger)
+	go stream.Listen(ctx, requestChan, resources, streamLogger)
 
 	// REST server
 	serverLogger := logger.With().Str("package", "handlers").Logger()
 	server := http.Server{
 		Addr:    "0.0.0.0:3001",
-		Handler: handlers.Handlers(requestChan, serverLogger),
+		Handler: handlers.Handlers(requestChan, resources, serverLogger),
 	}
 	go func() {
 		serverLogger.Info().Msg("Startup REST server")
