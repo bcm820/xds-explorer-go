@@ -2,6 +2,7 @@ package stream
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -68,17 +69,16 @@ RESOURCE_LOOP:
 					Str("Zone", request.Zone).
 					Str("Cluster", request.Cluster).
 					Str("ResourceNames", strings.Join(request.ResourceNames, ", ")).
-					Msg("Open XDS stream with DiscoveryRequest")
+					Msg("Open XDS stream with Aggregated Discovery Service")
 			}
 
 		case res := <-resourceChan:
-			logger.Info().Msg("Incoming DiscoveryResponse from XDS stream")
+			logger.Info().Msg(fmt.Sprintf("Receive %d nodes from XDS stream", len(res.Nodes)))
 
 			var collection []v2.ClusterLoadAssignment
 
 		NODE_LOOP:
 			for _, node := range res.Nodes {
-
 				var resource v2.ClusterLoadAssignment
 				if err := types.UnmarshalAny(&node, &resource); err != nil {
 					logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
@@ -98,28 +98,3 @@ RESOURCE_LOOP:
 		}
 	}
 }
-
-/*
-CLA:
-{
-	ClusterName:catalog
-	Endpoints:[{
-		Locality:<nil>
-		LbEndpoints:[{
-			HostIdentifier:0xc0000be058
-			HealthStatus:HEALTHY
-			Metadata: LoadBalancingWeight:nil XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0
-		}]
-		LoadBalancingWeight:nil
-		Priority:0
-		Proximity:nil
-		XXX_NoUnkeyedLiteral:{}
-		XXX_unrecognized:[]
-		XXX_sizecache:0}]
-	NamedEndpoints:map[]
-	Policy:<nil>
-	XXX_NoUnkeyedLiteral:{}
-	XXX_unrecognized:[]
-	XXX_sizecache:0
-}
-*/
