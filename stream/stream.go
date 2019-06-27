@@ -35,9 +35,10 @@ RESOURCE_LOOP:
 			request = &req
 
 			// TODO: determine if fields are missing
+			const typePrefix = "type.googleapis.com/envoy.api.v2."
 			options := []discovery.Option{
 				discovery.WithLocation("localhost:50000"),
-				discovery.WithResourceType(req.ResourceType),
+				discovery.WithResourceType(typePrefix + req.ResourceType),
 				discovery.WithNode(req.Node),
 				discovery.WithZone(req.Zone),
 				discovery.WithCluster(req.Cluster),
@@ -77,6 +78,7 @@ RESOURCE_LOOP:
 
 		NODE_LOOP:
 			for _, node := range res.Nodes {
+
 				var resource v2.ClusterLoadAssignment
 				if err := types.UnmarshalAny(&node, &resource); err != nil {
 					logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
@@ -88,10 +90,12 @@ RESOURCE_LOOP:
 		}
 	}
 
-	if err = session.Close(); err != nil {
-		logger.Error().AnErr("session.Close()", err).Msg("XDS server session close error")
-	} else {
-		logger.Info().Msg("Close XDS session")
+	if session != nil {
+		if err = session.Close(); err != nil {
+			logger.Error().AnErr("session.Close()", err).Msg("XDS server session close error")
+		} else {
+			logger.Info().Msg("Close XDS session")
+		}
 	}
 }
 

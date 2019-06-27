@@ -7,6 +7,7 @@ import (
 
 	"github.com/bcmendoza/xds-explorer/model"
 
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 )
@@ -21,20 +22,23 @@ func Handlers(requestChan chan<- model.Request, resources *model.Resources, logg
 
 func request(requestChan chan<- model.Request, logger zerolog.Logger) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// TODO: change to POST
-		if logger, ok := verifyMethod("/request", r.Method, "GET", logger, w); ok {
-
-			requestChan <- model.Request{
-				ResourceType:  "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment",
-				Zone:          "default-zone",
-				Cluster:       "catalog",
-				ResourceNames: []string{"catalog"},
+		if logger, ok := verifyMethod("/request", r.Method, "POST", logger, w); ok {
+			var request model.Request
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&request)
+			if err != nil {
+				logger.Error().AnErr("json.NewDecoder", err).Msg("400 Bad Request")
+				Report(ProblemDetail{
+					StatusCode: http.StatusBadRequest,
+					Detail:     "Could not unmarshall request JSON",
+				}, w)
+				return
 			}
 
+			requestChan <- request
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			jsonResp := "{\"requested\": true}"
+			jsonResp := "{\"request updated\": true}"
 			if _, err := w.Write([]byte(jsonResp)); err != nil {
 				logger.Error().AnErr("w.Write", err).Msg("500 Internal server error")
 			} else {
@@ -50,7 +54,12 @@ func listen(resources *model.Resources, logger zerolog.Logger) func(http.Respons
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
 
-			jsonResp, err := json.Marshal(resources.GetCLAs())
+			collection := resources.GetCLAs()
+			if collection == nil {
+				collection = make([]v2.ClusterLoadAssignment, 0)
+			}
+
+			jsonResp, err := json.Marshal(collection)
 			if err != nil {
 				logger.Error().AnErr("json.Marshal", err).Msg("Could not marshal into JSON")
 			}

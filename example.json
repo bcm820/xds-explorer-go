@@ -1,0 +1,7 @@
+{
+  "resourceType": "ClusterLoadAssignment",
+  "node": "default-node",
+  "zone": "default-zone",
+  "cluster": "example-service",
+  "resourceNames": ["example-service"]
+}
