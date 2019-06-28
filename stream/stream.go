@@ -14,9 +14,15 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func Listen(ctx context.Context, requestChan <-chan model.Request, resources *model.Resources, logger zerolog.Logger) {
+func Listen(
+	xdsServerAddress string,
+	ctx context.Context,
+	requestChan <-chan model.Request,
+	resources *model.Resources,
+	logger zerolog.Logger,
+) {
 	var err error
-	var session *discovery.XDS
+	var stream *discovery.XDS
 	var request *model.Request
 
 	resourceChan := make(chan discovery.Resource, 1)
@@ -38,7 +44,7 @@ RESOURCE_LOOP:
 			// TODO: determine if fields are missing
 			const typePrefix = "type.googleapis.com/envoy.api.v2."
 			options := []discovery.Option{
-				discovery.WithLocation("localhost:50000"),
+				discovery.WithLocation(xdsServerAddress),
 				discovery.WithResourceType(typePrefix + req.ResourceType),
 				discovery.WithNode(req.Node),
 				discovery.WithZone(req.Zone),
@@ -46,30 +52,30 @@ RESOURCE_LOOP:
 				discovery.WithResourceNames(req.ResourceNames),
 			}
 
-			// close existing session
-			// if closing fails, don't replace the current session
-			if session != nil {
-				if err = session.Close(); err != nil {
-					logger.Error().AnErr("session.Close()", err).Msg("XDS server session close error")
+			// close existing stream
+			// if closing fails, don't replace the current stream
+			if stream != nil {
+				if err = stream.Close(); err != nil {
+					logger.Error().AnErr("stream.Close()", err).Msg("XDS stream close error")
 					continue RESOURCE_LOOP
 				}
-				logger.Info().Msg("Close XDS session")
+				logger.Info().Msg("Close XDS stream")
 			}
 
-			// clear state and create new session
-			session, err = discovery.NewXDSSession(options...)
+			// clear state and create new stream
+			stream, err = discovery.NewXDSSession(options...)
 			if err != nil {
-				logger.Error().AnErr("discovery.NewXDSSession()", err).Msg("XDS server error")
+				logger.Error().AnErr("discovery.NewXDSSession()", err).Msg("XDS stream error")
 			} else {
 				resources.SetCLAs(make([]v2.ClusterLoadAssignment, 0))
-				discovery.DiscoverNodesStream(session, resourceChan)
+				discovery.DiscoverNodesStream(stream, resourceChan)
 				logger.Info().
 					Str("ResourceType", request.ResourceType).
 					Str("Node", request.Node).
 					Str("Zone", request.Zone).
 					Str("Cluster", request.Cluster).
 					Str("ResourceNames", strings.Join(request.ResourceNames, ", ")).
-					Msg("Open XDS stream with Aggregated Discovery Service")
+					Msg("Open XDS stream")
 			}
 
 		case res := <-resourceChan:
@@ -90,11 +96,11 @@ RESOURCE_LOOP:
 		}
 	}
 
-	if session != nil {
-		if err = session.Close(); err != nil {
-			logger.Error().AnErr("session.Close()", err).Msg("XDS server session close error")
+	if stream != nil {
+		if err = stream.Close(); err != nil {
+			logger.Error().AnErr("stream.Close()", err).Msg("XDS stream close error")
 		} else {
-			logger.Info().Msg("Close XDS session")
+			logger.Info().Msg("Close XDS stream")
 		}
 	}
 }

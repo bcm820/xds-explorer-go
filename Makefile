@@ -25,5 +25,7 @@ vendor:
 
 .PHONY: docker
 docker: vendor
+	@echo "Generating fresh UI build..."
+	@cd client && npm run build && cd ..
 	@echo "Generating docker image..."
 	@docker build -f docker/Dockerfile -t bcmendoza/xds-explorer:latest .

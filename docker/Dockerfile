@@ -3,6 +3,9 @@ FROM golang:1.12.5-alpine3.9 as builder
 
 RUN apk update && apk add --no-cache git
 
+WORKDIR /go/src/github.com/bcmendoza/xds-explorer/client
+RUN rm -rf node_modules
+
 WORKDIR /go/src/github.com/bcmendoza/xds-explorer
 ADD . /go/src/github.com/bcmendoza/xds-explorer
 
@@ -17,9 +20,14 @@ WORKDIR /app
 # Copy over binary
 COPY --from=builder /go/src/github.com/bcmendoza/xds-explorer/xds-explorer /app/
 
+# Copy over UI
+COPY --from=builder /go/src/github.com/bcmendoza/xds-explorer/client/build /app/client
+
 RUN chown -R 0:0 /app
 RUN chmod -R g=u /app
 
 USER 1000
+
+EXPOSE 3001
 
 CMD ./xds-explorer

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,6 +14,7 @@ import (
 	"github.com/bcmendoza/xds-explorer/stream"
 
 	"github.com/rs/zerolog"
+	"github.com/spf13/viper"
 )
 
 func main() {
@@ -39,7 +41,11 @@ func main() {
 
 	// GRPC stream
 	streamLogger := logger.With().Str("package", "stream").Logger()
-	go stream.Listen(ctx, requestChan, resources, streamLogger)
+	viper.SetDefault("XDS_HOST", "gm-control")
+	viper.SetDefault("XDS_PORT", "50000")
+	xdsHost := viper.GetString("XDS_HOST")
+	xdsPort := viper.GetString("XDS_PORT")
+	go stream.Listen(fmt.Sprintf("%s:%s", xdsHost, xdsPort), ctx, requestChan, resources, streamLogger)
 
 	// REST server
 	serverLogger := logger.With().Str("package", "handlers").Logger()

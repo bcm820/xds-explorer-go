@@ -14,9 +14,11 @@ import (
 
 func Handlers(requestChan chan<- model.Request, resources *model.Resources, logger zerolog.Logger) http.Handler {
 	r := mux.NewRouter()
+
 	r.HandleFunc("/request", request(requestChan, logger))
 	r.HandleFunc("/listen", listen(resources, logger))
 	r.HandleFunc("/ping", ping(logger))
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("/app/client")))
 	return r
 }
 
