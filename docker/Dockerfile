@@ -3,9 +3,6 @@ FROM golang:1.12.5-alpine3.9 as builder
 
 RUN apk update && apk add --no-cache git
 
-WORKDIR /go/src/github.com/bcmendoza/xds-explorer/client
-RUN rm -rf node_modules
-
 WORKDIR /go/src/github.com/bcmendoza/xds-explorer
 ADD . /go/src/github.com/bcmendoza/xds-explorer
 
