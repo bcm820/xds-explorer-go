@@ -7,7 +7,6 @@ import { Column, Row } from "./styles";
 function Request({ getResources }) {
   const { values, handleChange, handleSubmit } = useForm(
     formData => {
-      console.log(formData);
       const reqBody = { ...formData };
       reqBody.resourceNames = reqBody.resourceNames
         .split(",")
@@ -15,7 +14,7 @@ function Request({ getResources }) {
       axios.post("/request", reqBody).then(setTimeout(getResources, 1000));
     },
     {
-      resourceType: "ClusterLoadAssignment",
+      resourceType: "Cluster",
       node: "",
       zone: "",
       cluster: "",
@@ -28,9 +27,9 @@ function Request({ getResources }) {
       <Column>
         <Row>
           <label htmlFor={"resourceType"}>ResourceType</label>
-          <select onChange={handleChange} name={"resoureType"} required>
-            <option value="ClusterLoadAssignment">ClusterLoadAssignment</option>
+          <select onChange={handleChange} name={"resourceType"} required>
             <option value="Cluster">Cluster</option>
+            <option value="ClusterLoadAssignment">ClusterLoadAssignment</option>
             <option value="RouteConfiguration">RouteConfiguration</option>
             <option value="Listener">Listener</option>
             <option value="auth.Secret">auth.Secret</option>

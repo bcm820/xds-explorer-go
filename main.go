@@ -37,21 +37,22 @@ func main() {
 	requestChan := make(chan model.Request, 1)
 
 	// model
-	resources := model.New()
+	xdsData := model.New()
 
 	// GRPC stream
 	streamLogger := logger.With().Str("package", "stream").Logger()
-	viper.SetDefault("XDS_HOST", "gm-control")
+	viper.AutomaticEnv()
+	viper.SetDefault("XDS_HOST", "localhost")
 	viper.SetDefault("XDS_PORT", "50000")
 	xdsHost := viper.GetString("XDS_HOST")
 	xdsPort := viper.GetString("XDS_PORT")
-	go stream.Listen(fmt.Sprintf("%s:%s", xdsHost, xdsPort), ctx, requestChan, resources, streamLogger)
+	go stream.Listen(fmt.Sprintf("%s:%s", xdsHost, xdsPort), ctx, requestChan, xdsData, streamLogger)
 
 	// REST server
 	serverLogger := logger.With().Str("package", "handlers").Logger()
 	server := http.Server{
 		Addr:    "0.0.0.0:3001",
-		Handler: handlers.Handlers(requestChan, resources, serverLogger),
+		Handler: handlers.Handlers(requestChan, xdsData, serverLogger),
 	}
 	go func() {
 		serverLogger.Info().Msg("Startup REST server")

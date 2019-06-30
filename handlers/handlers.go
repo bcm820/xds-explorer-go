@@ -7,16 +7,15 @@ import (
 
 	"github.com/bcmendoza/xds-explorer/model"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 )
 
-func Handlers(requestChan chan<- model.Request, resources *model.Resources, logger zerolog.Logger) http.Handler {
+func Handlers(requestChan chan<- model.Request, xdsData *model.XDSData, logger zerolog.Logger) http.Handler {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/request", request(requestChan, logger))
-	r.HandleFunc("/listen", listen(resources, logger))
+	r.HandleFunc("/listen", listen(xdsData, logger))
 	r.HandleFunc("/ping", ping(logger))
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("/app/client")))
 	return r
@@ -50,18 +49,13 @@ func request(requestChan chan<- model.Request, logger zerolog.Logger) func(http.
 	}
 }
 
-func listen(resources *model.Resources, logger zerolog.Logger) func(http.ResponseWriter, *http.Request) {
+func listen(xdsData *model.XDSData, logger zerolog.Logger) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if logger, ok := verifyMethod("/listen", r.Method, "GET", logger, w); ok {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
 
-			collection := resources.GetCLAs()
-			if collection == nil {
-				collection = make([]v2.ClusterLoadAssignment, 0)
-			}
-
-			jsonResp, err := json.Marshal(collection)
+			jsonResp, err := xdsData.GetLatestResources()
 			if err != nil {
 				logger.Error().AnErr("json.Marshal", err).Msg("Could not marshal into JSON")
 			}
