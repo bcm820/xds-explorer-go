@@ -1,15 +1,25 @@
 import React, { useState } from "react";
+
 import Request from "./Request";
-import Response from "./Response";
-import "./App.css";
+import JSONTree from "react-json-tree";
+import axios from "axios";
+
+import { Container, theme } from "./styles";
 
 function App() {
-  const [requestCount, setRequestCount] = useState(0);
+  const [resources, setResources] = useState([]);
+  const getResources = () =>
+    axios.get("/listen").then(res => setResources(res.data));
   return (
-    <>
-      <Request incrementCount={() => setRequestCount(requestCount + 1)} />
-      <Response requestCount={requestCount} />
-    </>
+    <Container>
+      <Request getResources={getResources} />
+      <JSONTree
+        data={resources}
+        theme={theme}
+        invertTheme={true}
+        shouldExpandNode={() => true}
+      />
+    </Container>
   );
 }
 

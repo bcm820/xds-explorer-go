@@ -2,17 +2,20 @@ import React from "react";
 import useForm from "./useForm";
 import axios from "axios";
 
-function Request({ incrementCount }) {
+import { Column, Row } from "./styles";
+
+function Request({ getResources }) {
   const { values, handleChange, handleSubmit } = useForm(
     formData => {
-      const request = { ...formData };
-      request.resourceNames = request.resourceNames
+      console.log(formData);
+      const reqBody = { ...formData };
+      reqBody.resourceNames = reqBody.resourceNames
         .split(",")
         .map(s => s.trim());
-      axios.post("/request", request).then(() => incrementCount());
+      axios.post("/request", reqBody).then(setTimeout(getResources, 1000));
     },
     {
-      resourceType: "",
+      resourceType: "ClusterLoadAssignment",
       node: "",
       zone: "",
       cluster: "",
@@ -22,42 +25,49 @@ function Request({ incrementCount }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <input
-        type={"text"}
-        onChange={handleChange}
-        name={"resourceType"}
-        value={values.resourceType}
-        placeholder={"ResourceType"}
-      />
-      <input
-        type={"text"}
-        onChange={handleChange}
-        name={"node"}
-        value={values.node}
-        placeholder={"Node"}
-      />
-      <input
-        type={"text"}
-        onChange={handleChange}
-        name={"zone"}
-        value={values.zone}
-        placeholder={"Zone"}
-      />
-      <input
-        type={"text"}
-        onChange={handleChange}
-        name={"cluster"}
-        value={values.cluster}
-        placeholder={"Cluster"}
-      />
-      <input
-        type={"text"}
-        onChange={handleChange}
-        name={"resourceNames"}
-        value={values.resourceNames}
-        placeholder={"ResourceNames"}
-      />
-      <input type={"submit"} value={"Request"} />
+      <Column>
+        <Row>
+          <label htmlFor={"resourceType"}>ResourceType</label>
+          <select onChange={handleChange} name={"resoureType"} required>
+            <option value="ClusterLoadAssignment">ClusterLoadAssignment</option>
+            <option value="Cluster">Cluster</option>
+            <option value="RouteConfiguration">RouteConfiguration</option>
+            <option value="Listener">Listener</option>
+            <option value="auth.Secret">auth.Secret</option>
+          </select>
+        </Row>
+        <input
+          type={"text"}
+          onChange={handleChange}
+          name={"node"}
+          value={values.node}
+          placeholder={"Node"}
+        />
+        <input
+          type={"text"}
+          onChange={handleChange}
+          name={"zone"}
+          value={values.zone}
+          placeholder={"Zone"}
+          required
+        />
+        <input
+          type={"text"}
+          onChange={handleChange}
+          name={"cluster"}
+          value={values.cluster}
+          placeholder={"Cluster"}
+          required
+        />
+        <input
+          type={"text"}
+          onChange={handleChange}
+          name={"resourceNames"}
+          value={values.resourceNames}
+          placeholder={"ResourceNames"}
+        />
+        <input type={"submit"} value={"Request"} />
+      </Column>
     </form>
   );
 }
