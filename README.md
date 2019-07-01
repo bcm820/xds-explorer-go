@@ -6,7 +6,9 @@ Since ADS is only available via gRPC, it is generally unavailable client-side vi
 1. A gRPC connection must be established with the Envoy management server with a DiscoveryRequest.
 2. The DiscoveryResponse returned in a gRPC connection stream is a protobuf message that must be marshaled into JSON.
 
-So this service simply establishes the gRPC connection, creates the DiscoveryRequest with the given inputs, and returns the DiscoveryResponse marshaled as JSON.
+So this service simply establishes the gRPC connection, creates the DiscoveryRequest with the given inputs, and returns the DiscoveryResponse as JSON.
+
+![demo](./screencap.gif "demo")
 
 ## Resource Types
 
@@ -49,11 +51,15 @@ ResourceNames: ""
 
 ## API
 
+---
+
 ### Route: `/`
 
 #### Method: `GET`
 
 Loads a single-page application interface for interacting with the API.
+
+---
 
 ### Route: `/request`
 
@@ -64,7 +70,7 @@ Initializes or updates the current DiscoveryRequest being made to the Envoy mana
 Sample Request Body:
 ```json
 {
-  "resourceType": "RouteConfiguration",
+  "resourceType": "ClusterLoadAssignment",
   "node": "default-node",
   "zone": "default-zone",
   "cluster": "catalog",
@@ -77,6 +83,8 @@ Response:
 {"request updated": true}
 ```
 
+---
+
 ### Route: `/listen`
 
 #### Method: `GET`
@@ -87,346 +95,31 @@ Response:
 ```json
 [
   {
-    "name": "catalog:8080",
-    "address": {
-      "Address": {
-        "SocketAddress": {
-          "address": "0.0.0.0",
-          "PortSpecifier": {
-            "PortValue": 8080
-          }
-        }
-      }
-    },
-    "filter_chains": [
+    "cluster_name": "catalog",
+    "endpoints": [
       {
-        "filter_chain_match": {},
-        "filters": [
+        "lb_endpoints": [
           {
-            "name": "envoy.http_connection_manager",
-            "ConfigType": {
-              "Config": {
-                "fields": {
-                  "access_log": {
-                    "Kind": {
-                      "ListValue": {
-                        "values": [
-                          {
-                            "Kind": {
-                              "StructValue": {
-                                "fields": {
-                                  "config": {
-                                    "Kind": {
-                                      "StructValue": {
-                                        "fields": {
-                                          "additional_request_headers_to_log": {
-                                            "Kind": {
-                                              "ListValue": {
-                                                "values": [
-                                                  {
-                                                    "Kind": {
-                                                      "StringValue": "X-TBN-DOMAIN"
-                                                    }
-                                                  },
-                                                  {
-                                                    "Kind": {
-                                                      "StringValue": "X-TBN-ROUTE"
-                                                    }
-                                                  },
-                                                  {
-                                                    "Kind": {
-                                                      "StringValue": "X-TBN-RULE"
-                                                    }
-                                                  },
-                                                  {
-                                                    "Kind": {
-                                                      "StringValue": "X-TBN-SHARED-RULES"
-                                                    }
-                                                  },
-                                                  {
-                                                    "Kind": {
-                                                      "StringValue": "X-TBN-CONSTRAINT"
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          },
-                                          "common_config": {
-                                            "Kind": {
-                                              "StructValue": {
-                                                "fields": {
-                                                  "grpc_service": {
-                                                    "Kind": {
-                                                      "StructValue": {
-                                                        "fields": {
-                                                          "envoy_grpc": {
-                                                            "Kind": {
-                                                              "StructValue": {
-                                                                "fields": {
-                                                                  "cluster_name": {
-                                                                    "Kind": {
-                                                                      "StringValue": "xds_cluster"
-                                                                    }
-                                                                  }
-                                                                }
-                                                              }
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  "log_name": {
-                                                    "Kind": {
-                                                      "StringValue": "tbn.access"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "name": {
-                                    "Kind": {
-                                      "StringValue": "envoy.http_grpc_access_log"
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        ]
+            "HostIdentifier": {
+              "Endpoint": {
+                "address": {
+                  "Address": {
+                    "SocketAddress": {
+                      "address": "192.168.16.8",
+                      "PortSpecifier": {
+                        "PortValue": 8080
                       }
-                    }
-                  },
-                  "http_filters": {
-                    "Kind": {
-                      "ListValue": {
-                        "values": [
-                          {
-                            "Kind": {
-                              "StructValue": {
-                                "fields": {
-                                  "config": {
-                                    "Kind": {
-                                      "StructValue": {}
-                                    }
-                                  },
-                                  "name": {
-                                    "Kind": {
-                                      "StringValue": "envoy.cors"
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          },
-                          {
-                            "Kind": {
-                              "StructValue": {
-                                "fields": {
-                                  "config": {
-                                    "Kind": {
-                                      "StructValue": {
-                                        "fields": {
-                                          "upstream_log": {
-                                            "Kind": {
-                                              "ListValue": {
-                                                "values": [
-                                                  {
-                                                    "Kind": {
-                                                      "StructValue": {
-                                                        "fields": {
-                                                          "config": {
-                                                            "Kind": {
-                                                              "StructValue": {
-                                                                "fields": {
-                                                                  "additional_request_headers_to_log": {
-                                                                    "Kind": {
-                                                                      "ListValue": {
-                                                                        "values": [
-                                                                          {
-                                                                            "Kind": {
-                                                                              "StringValue": "X-TBN-DOMAIN"
-                                                                            }
-                                                                          },
-                                                                          {
-                                                                            "Kind": {
-                                                                              "StringValue": "X-TBN-ROUTE"
-                                                                            }
-                                                                          },
-                                                                          {
-                                                                            "Kind": {
-                                                                              "StringValue": "X-TBN-RULE"
-                                                                            }
-                                                                          },
-                                                                          {
-                                                                            "Kind": {
-                                                                              "StringValue": "X-TBN-SHARED-RULES"
-                                                                            }
-                                                                          },
-                                                                          {
-                                                                            "Kind": {
-                                                                              "StringValue": "X-TBN-CONSTRAINT"
-                                                                            }
-                                                                          }
-                                                                        ]
-                                                                      }
-                                                                    }
-                                                                  },
-                                                                  "common_config": {
-                                                                    "Kind": {
-                                                                      "StructValue": {
-                                                                        "fields": {
-                                                                          "grpc_service": {
-                                                                            "Kind": {
-                                                                              "StructValue": {
-                                                                                "fields": {
-                                                                                  "envoy_grpc": {
-                                                                                    "Kind": {
-                                                                                      "StructValue": {
-                                                                                        "fields": {
-                                                                                          "cluster_name": {
-                                                                                            "Kind": {
-                                                                                              "StringValue": "xds_cluster"
-                                                                                            }
-                                                                                          }
-                                                                                        }
-                                                                                      }
-                                                                                    }
-                                                                                  }
-                                                                                }
-                                                                              }
-                                                                            }
-                                                                          },
-                                                                          "log_name": {
-                                                                            "Kind": {
-                                                                              "StringValue": "tbn.upstream"
-                                                                            }
-                                                                          }
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              }
-                                                            }
-                                                          },
-                                                          "name": {
-                                                            "Kind": {
-                                                              "StringValue": "envoy.http_grpc_access_log"
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "name": {
-                                    "Kind": {
-                                      "StringValue": "envoy.router"
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  },
-                  "rds": {
-                    "Kind": {
-                      "StructValue": {
-                        "fields": {
-                          "config_source": {
-                            "Kind": {
-                              "StructValue": {
-                                "fields": {
-                                  "api_config_source": {
-                                    "Kind": {
-                                      "StructValue": {
-                                        "fields": {
-                                          "api_type": {
-                                            "Kind": {
-                                              "StringValue": "GRPC"
-                                            }
-                                          },
-                                          "grpc_services": {
-                                            "Kind": {
-                                              "ListValue": {
-                                                "values": [
-                                                  {
-                                                    "Kind": {
-                                                      "StructValue": {
-                                                        "fields": {
-                                                          "envoy_grpc": {
-                                                            "Kind": {
-                                                              "StructValue": {
-                                                                "fields": {
-                                                                  "cluster_name": {
-                                                                    "Kind": {
-                                                                      "StringValue": "xds_cluster"
-                                                                    }
-                                                                  }
-                                                                }
-                                                              }
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          },
-                                          "refresh_delay": {
-                                            "Kind": {
-                                              "StringValue": "30s"
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          },
-                          "route_config_name": {
-                            "Kind": {
-                              "StringValue": "catalog:8080"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "stat_prefix": {
-                    "Kind": {
-                      "StringValue": "catalog-8080"
                     }
                   }
                 }
               }
-            }
+            },
+            "health_status": 1,
+            "metadata": {}
           }
         ]
       }
-    ],
-    "listener_filters": null
+    ]
   }
 ]
 ```
