@@ -47,7 +47,7 @@ RESOURCE_LOOP:
 			if err != nil {
 				logger.Error().AnErr("discovery.NewXDSSession()", err).Msg("XDS stream error")
 			} else {
-				clearResourceSlice(xdsData, req.ResourceType)
+				xdsData.SetResources(nil, logger)
 				discovery.DiscoverNodesStream(stream, resourceChan)
 				logger.Info().
 					Str("ResourceType", fmt.Sprintf("%+v", request.ResourceType)).
@@ -105,82 +105,84 @@ func resetStream(request *model.Request, req model.Request, xdsServerAddress str
 	return options, true
 }
 
-func clearResourceSlice(xdsData *model.XDSData, rt model.ResourceType) {
+func setResourceSlice(xdsData *model.XDSData, rt model.ResourceType, nodes []types.Any, logger zerolog.Logger) {
+	var collection []interface{}
 	switch rt {
 	case model.Cluster:
-		xdsData.SetClusters(make([]v2.Cluster, 0))
+		for _, node := range nodes {
+			if resource, ok := appendCluster(node, logger); ok {
+				collection = append(collection, resource)
+			}
+		}
 	case model.ClusterLoadAssignment:
-		xdsData.SetCLAs(make([]v2.ClusterLoadAssignment, 0))
+		for _, node := range nodes {
+			if resource, ok := appendCLA(node, logger); ok {
+				collection = append(collection, resource)
+			}
+		}
 	case model.RouteConfiguration:
-		xdsData.SetRouteConfigurations(make([]v2.RouteConfiguration, 0))
+		for _, node := range nodes {
+			if resource, ok := appendRouteConfiguration(node, logger); ok {
+				collection = append(collection, resource)
+			}
+		}
 	case model.Listener:
-		xdsData.SetListeners(make([]v2.Listener, 0))
+		for _, node := range nodes {
+			if resource, ok := appendListener(node, logger); ok {
+				collection = append(collection, resource)
+			}
+		}
 	case model.Secret:
-		xdsData.SetSecrets(make([]auth.Secret, 0))
+		for _, node := range nodes {
+			if resource, ok := appendSecret(node, logger); ok {
+				collection = append(collection, resource)
+			}
+		}
 	}
+	xdsData.SetResources(collection, logger)
 }
 
-func setResourceSlice(xdsData *model.XDSData, rt model.ResourceType, nodes []types.Any, logger zerolog.Logger) {
-	switch rt {
-	case model.Cluster:
-		var collection []v2.Cluster
-		for _, node := range nodes {
-			var resource v2.Cluster
-			if err := types.UnmarshalAny(&node, &resource); err != nil {
-				logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
-				continue
-			}
-			collection = append(collection, resource)
-		}
-		xdsData.SetClusters(collection)
-
-	case model.ClusterLoadAssignment:
-		var collection []v2.ClusterLoadAssignment
-		for _, node := range nodes {
-			var resource v2.ClusterLoadAssignment
-			if err := types.UnmarshalAny(&node, &resource); err != nil {
-				logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
-				continue
-			}
-			collection = append(collection, resource)
-		}
-		xdsData.SetCLAs(collection)
-
-	case model.RouteConfiguration:
-		var collection []v2.RouteConfiguration
-		for _, node := range nodes {
-			var resource v2.RouteConfiguration
-			if err := types.UnmarshalAny(&node, &resource); err != nil {
-				logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
-				continue
-			}
-			collection = append(collection, resource)
-		}
-		xdsData.SetRouteConfigurations(collection)
-
-	case model.Listener:
-		var collection []v2.Listener
-		for _, node := range nodes {
-			var resource v2.Listener
-			if err := types.UnmarshalAny(&node, &resource); err != nil {
-				logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
-				continue
-			}
-			collection = append(collection, resource)
-		}
-		xdsData.SetListeners(collection)
-
-	case model.Secret:
-		var collection []auth.Secret
-		for _, node := range nodes {
-			var resource auth.Secret
-			if err := types.UnmarshalAny(&node, &resource); err != nil {
-				logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
-				continue
-			}
-			collection = append(collection, resource)
-		}
-		xdsData.SetSecrets(collection)
-
+func appendCluster(node types.Any, logger zerolog.Logger) (v2.Cluster, bool) {
+	var resource v2.Cluster
+	if err := types.UnmarshalAny(&node, &resource); err != nil {
+		logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
+		return v2.Cluster{}, false
 	}
+	return resource, true
+}
+
+func appendCLA(node types.Any, logger zerolog.Logger) (v2.ClusterLoadAssignment, bool) {
+	var resource v2.ClusterLoadAssignment
+	if err := types.UnmarshalAny(&node, &resource); err != nil {
+		logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
+		return v2.ClusterLoadAssignment{}, false
+	}
+	return resource, true
+}
+
+func appendRouteConfiguration(node types.Any, logger zerolog.Logger) (v2.RouteConfiguration, bool) {
+	var resource v2.RouteConfiguration
+	if err := types.UnmarshalAny(&node, &resource); err != nil {
+		logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
+		return v2.RouteConfiguration{}, false
+	}
+	return resource, true
+}
+
+func appendListener(node types.Any, logger zerolog.Logger) (v2.Listener, bool) {
+	var resource v2.Listener
+	if err := types.UnmarshalAny(&node, &resource); err != nil {
+		logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
+		return v2.Listener{}, false
+	}
+	return resource, true
+}
+
+func appendSecret(node types.Any, logger zerolog.Logger) (auth.Secret, bool) {
+	var resource auth.Secret
+	if err := types.UnmarshalAny(&node, &resource); err != nil {
+		logger.Error().AnErr("types.UnmarshalAny", err).Msg("Could not unmarshal proto")
+		return auth.Secret{}, false
+	}
+	return resource, true
 }

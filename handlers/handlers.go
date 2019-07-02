@@ -55,11 +55,7 @@ func listen(xdsData *model.XDSData, logger zerolog.Logger) func(http.ResponseWri
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
 
-			jsonResp, err := xdsData.GetLatestResources()
-			if err != nil {
-				logger.Error().AnErr("json.Marshal", err).Msg("Could not marshal into JSON")
-			}
-
+			jsonResp := xdsData.GetResources()
 			if _, err := w.Write([]byte(jsonResp)); err != nil {
 				logger.Error().AnErr("w.Write", err).Msg("500 Internal server error")
 			} else {
