@@ -42,16 +42,15 @@ func main() {
 	// GRPC stream
 	streamLogger := logger.With().Str("package", "stream").Logger()
 	viper.AutomaticEnv()
-	viper.SetDefault("XDS_HOST", "localhost")
-	viper.SetDefault("XDS_PORT", "50000")
-	xdsHost := viper.GetString("XDS_HOST")
-	xdsPort := viper.GetString("XDS_PORT")
-	go stream.Listen(fmt.Sprintf("%s:%s", xdsHost, xdsPort), ctx, requestChan, xdsData, streamLogger)
+	viper.SetDefault("XDS_SERVER", "localhost:50000")
+	xdsServer := viper.GetString("XDS_SERVER")
+	go stream.Listen(xdsServer, ctx, requestChan, xdsData, streamLogger)
 
 	// REST server
 	serverLogger := logger.With().Str("package", "handlers").Logger()
+	viper.SetDefault("CLIENT_PORT", "3001")
 	server := http.Server{
-		Addr:    "0.0.0.0:3001",
+		Addr:    fmt.Sprintf("0.0.0.0:%s", viper.GetString("CLIENT_PORT")),
 		Handler: handlers.Handlers(requestChan, xdsData, serverLogger),
 	}
 	go func() {
